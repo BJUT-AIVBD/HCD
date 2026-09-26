@@ -14,102 +14,88 @@ Shuying Zhang, Jing Zhang, Hui Zhang, and Li Zhuo. (2023). HCD by BJUT-AI&VBD [C
 
 # BJUT-HCD_S
 
-BJUT-HCD_S is a large-scale Chinese semantic textual similarity dataset designed for text semantic understanding in video-related content scenarios. It is constructed for evaluating the ability of models to measure fine-grained semantic similarity between Chinese sentence or paragraph pairs.
-
-## Introduction
-
-With the rapid growth of short-video platforms, textual content associated with videos, such as subtitles, descriptions, comments, and topic summaries, has become increasingly diverse and semantically complex. Many video-related texts are expressed in informal, conversational, or rewritten forms, making semantic similarity estimation more challenging than conventional short-sentence matching.
-
-BJUT-HCD_S contains 5,000 Chinese subtitle-oriented text pairs, including 4,000 training pairs, 500 development pairs, and 500 test pairs. Each sample consists of two Chinese subtitle-style texts at the sentence or paragraph level and a semantic similarity score ranging from 0.0 to 5.0, where 0.0 indicates complete semantic irrelevance and 5.0 indicates highly similar or semantically equivalent meanings.
-
-The dataset contains 5,000 sentence pairs, including 4,000 training pairs, 500 development pairs, and 500 test pairs.
+BJUT-HCD_S is a Chinese semantic textual similarity dataset designed for fine-grained semantic similarity measurement in short-video subtitle scenarios. It contains subtitle pairs with different degrees of semantic overlap, including paraphrased, rewritten, partially related, and semantically unrelated content.
 
 ## Dataset Statistics
 
+BJUT-HCD_S contains 5,000 Chinese subtitle pairs.
+
 | Split | Number of pairs |
-| ----- | --------------: |
-| Train |           4,000 |
-| Dev   |             500 |
-| Test  |             500 |
-| Total |           5,000 |
+| --- | ---: |
+| Train | 4,000 |
+| Validation | 500 |
+| Test | 500 |
+| Total | 5,000 |
+
+## Annotation Protocol
+
+During dataset construction, overly short, incomplete, noisy, and extremely long subtitles were removed. Candidate subtitle pairs were curated to cover different similarity levels and common rewriting patterns, including synonym substitution, entity replacement, word-order adjustment, paraphrastic rewriting, and semantic-structure reuse.
+
+Annotation was performed independently by two trained annotators. Each subtitle pair was assigned a semantic similarity score from 0 to 5 using an annotation scheme adapted from the STS-B framework to the short-video homogenization setting.
+
+Annotators were instructed to prioritize the preservation or reuse of key entities, factual claims, and narrative structure, while treating surface lexical overlap as a secondary factor.
+
+Pairs with an absolute annotation difference of two points or more were discussed by the two annotators. A consensus score was assigned when agreement was reached, and pairs for which no consensus could be reached were removed. For pairs not requiring discussion, the final score was obtained by averaging the two independent annotations.
 
 ## Score Definition
 
-The semantic similarity score ranges from 0.0 to 5.0.
+The annotation scale ranges from 0 to 5.
 
-| Score range | Description                                            |
-| ----------- | ------------------------------------------------------ |
-| 0.0         | Completely unrelated semantics                         |
-| 1.0         | Weak or indirect semantic relation                     |
-| 2.0         | Partially related but with major semantic differences  |
-| 3.0         | Moderately related with overlapping topics or meanings |
-| 4.0         | Highly related with minor semantic differences         |
-| 5.0         | Highly similar or semantically equivalent              |
+| Score | Description |
+| --- | --- |
+| 0 | Semantically unrelated |
+| 1 | Weak or indirect semantic relation |
+| 2 | Partially related, with major differences in key semantic content |
+| 3 | Moderately related, but with clear differences in information content or focus |
+| 4 | Highly related, with the core meaning largely preserved but some differences in scope or details |
+| 5 | Essentially semantically equivalent, with differences mainly in wording or sentence structure |
+
+Because independent annotations are averaged for pairs not requiring discussion, final dataset scores may contain non-integer values.
+
+## Inter-Annotator Agreement
+
+Inter-annotator agreement was calculated from the initial independent annotations before disagreement resolution.
+
+- Number of annotators: 2
+- Agreement metric: quadratic-weighted Cohen's kappa
+- Cohen's kappa: 0.72
+
+## Data Split and Leakage Control
+
+The dataset was split before knowledge graph construction and LLM-based augmentation. The training, validation, and test splits do not share original video IDs, and cross-split near-duplicate checking found no confirmed near-duplicate subtitles.
+
+Only training-split subtitles were used for knowledge graph construction, LLM-based augmentation, and parameter optimization. Validation data were used for model selection, and test data were reserved for final evaluation.
 
 ## Data Format
 
-Each data instance contains two Chinese texts and a semantic similarity score.
-
-Recommended file format:
+Each instance contains two Chinese subtitle texts and a semantic similarity score.
 
 ```csv
 id,sentence1,sentence2,score
-1,"Chinese text A","Chinese text B",4.2
+1,"Chinese text A","Chinese text B",4.0
 2,"Chinese text A","Chinese text B",1.0
+
 ```
+## Annotation Example
 
-The dataset can also be stored in JSONL format:
+### Score 3
 
-```json
-{"id": 1, "sentence1": "Chinese text A", "sentence2": "Chinese text B", "score": 4.2}
-{"id": 2, "sentence1": "Chinese text A", "sentence2": "Chinese text B", "score": 1.0}
-```
+Text A:
+夜景人像糊成鬼？三脚架不是唯一选择！教你手持拍出清晰夜景：开大光圈到F1.8，ISO调到1600，快门速度控制在1/50秒以上，再让模特稍微靠墙借力，成片率直接翻倍！
 
-## Domain Coverage
+Text B:
+晚上拍照总是一团黑？试试手机夜景模式的黑科技！打开专业模式，手动拉高阴影，降低高光，再用夜景算法合成，瞬间提亮暗部细节。记得让人物站在有光源的地方，皮肤都会发光哦！
 
-BJUT-HCD_S covers diverse video-related textual scenarios, including but not limited to:
+Rationale: Both texts discuss night portrait photography but focus on different technical approaches, corresponding to a moderate similarity level.
 
-* psychology and mental health;
-* real estate investment and market analysis;
-* pet care and animal health;
-* agricultural planting techniques;
-* entertainment content, such as dancing, music, and musical instrument learning;
-* workplace communication and management.
+### Score 5
 
-This cross-domain design enables the dataset to evaluate semantic understanding under different contexts, topics, writing styles, and levels of semantic overlap.
+Text A:
+眼霜是不是智商税？我觉得真不是！尤其是过了25岁，眼部细纹、黑眼圈都来了，用对眼霜能明显改善。选的时候看成分，像胜肽、维A醇这些，坚持用才有效果，别指望涂一两天就见效啊。
+Text B:
+眼霜到底是不是智商税？我个人认为不是的。特别是25岁以后，眼部问题像细纹、黑眼圈会出现，合适的眼霜很有帮助。关键要选含有效成分如胜肽或维A醇的产品，并且需要持续使用才能看到效果，不能急于求成。
+Rationale: Both texts express nearly identical claims about eye cream, age-related concerns, key ingredients, and the need for continued use, with differences mainly in wording.
 
-## Text Characteristics
+## Data Availability
 
-The texts in BJUT-HCD_S are mostly paragraph-level Chinese texts. They include both informal expressions, such as short-video comments, life-sharing texts, and conversational descriptions, and more formal expository texts, such as market analysis and professional knowledge explanations.
-
-Therefore, BJUT-HCD_S reflects the diversity of Chinese video-platform text and provides a challenging benchmark for long-text semantic similarity estimation.
-
-## Example Texts
-
-The following examples illustrate the style and domain coverage of the dataset.
-
-### Real Estate
-
-> 房贷利率又降了！央行最新LPR报价下调，5年期以上LPR降至历史低点，这意味着月供压力将减轻。以贷款100万、30年期为例，每月可少还约150元。但别高兴太早，银行实际执行利率可能因个人信用、地区政策而异。建议近期有购房计划的朋友，多对比几家银行的房贷产品，同时优化自身征信记录，争取更低利率。这波政策红利，你抓住了吗？
-
-### Agriculture
-
-> 阳台种菜最怕啥？虫害啊！尤其是那种小白飞虫，密密麻麻的特别烦人。我最近发现一个土办法，用大蒜水喷叶面，三天喷一次，连续两周，虫子少了一大半！天然无污染，种出来的菜吃着也放心。
-
-### Education
-
-> 今天想和大家深入探讨一个常被忽视但至关重要的英语学习误区：过度依赖语法规则。很多学习者花费大量时间背诵复杂的语法条款，却在实际交流中结结巴巴，这正是因为将语言学习等同于数学公式推导。语言本质上是沟通工具，其核心在于流利表达和意义传递。
-
-## Intended Use
-
-BJUT-HCD_S is suitable for training and evaluating models for:
-
-* Chinese semantic textual similarity estimation;
-* sentence and paragraph embedding learning;
-* ranking-based sentence generation;
-* video content retrieval;
-* recommendation systems;
-* cross-modal semantic matching;
-* fine-grained semantic similarity ranking.
-
-In particular, the dataset is well suited for evaluating sentence embedding models trained with Ranking Sentence Generation or other ranking-oriented supervision strategies.
+The BJUT-HCD_S dataset will be available from the corresponding author upon reasonable request. 
